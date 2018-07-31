@@ -3,7 +3,7 @@
 from collections import defaultdict
 import random
 import numpy as np
-from model.consts import LATENT_DIM
+from model.consts import LATENT_DIM, INITIAL_THETA_SCALE
 
 
 class DataPool(object):
@@ -23,7 +23,7 @@ class DataPool(object):
         Returns:
 
         """
-        if key is not str:
+        if not isinstance(key, str):
             str_key = str(key)
             if str_key not in DataPool.key_pool:
                 DataPool.key_pool[str_key] = key
@@ -97,6 +97,35 @@ class DataPool(object):
         random.shuffle(values)
         return values
 
+    @staticmethod
+    def get(key):
+        """
+
+        Args:
+            key
+
+        Returns:
+
+        """
+        if isinstance(key, str):
+            key = DataPool.key_pool[key]
+
+        return DataPool.pool[key]
+
+    @staticmethod
+    def clear():
+        """
+
+        Args:
+
+
+        Returns:
+
+        """
+
+        DataPool.pool.clear()
+        DataPool.key_pool.clear()
+
 
 class Feature(object):
     """
@@ -104,13 +133,14 @@ class Feature(object):
     self.values is  np.ndarray
     """
 
-    def __init__(self, key: str, values: np.ndarray = None):
+    def __init__(self, key: str, ftype: str = None, values: np.ndarray = None):
         """Constructor for Feature
 
         """
         self.key = key
+        self.type = ftype
         if values is None:
-            values = np.random.random((LATENT_DIM,)) * 0.2
+            values = np.random.random((LATENT_DIM,)) * INITIAL_THETA_SCALE
         else:
             values = np.array(values, dtype=float)
         self.values = values
@@ -138,7 +168,15 @@ def add_rating(uk, ik, rating, load_feature_func=None):
     :param load_feature_func:
     :return:
     """
-    user = Feature(uk, load_feature_func(uk))
-    item = Feature(ik, load_feature_func(ik))
+    if uk not in DataPool.key_pool:
+        user = Feature(uk, 'user', load_feature_func(uk))
+    else:
+        user = DataPool.key_pool[uk]
+
+    if ik not in DataPool.key_pool:
+        item = Feature(ik, 'item', load_feature_func(ik))
+    else:
+        item = DataPool.key_pool[ik]
+
     DataPool.append(item, Pair(user, rating))
     DataPool.append(user, Pair(item, rating))

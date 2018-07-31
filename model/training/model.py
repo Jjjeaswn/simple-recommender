@@ -1,6 +1,7 @@
 import numpy as np
 import matplotlib.pyplot as plt
 from sklearn.model_selection import GridSearchCV
+from model.consts import INITIAL_THETA_SCALE, OFFLINE_EARLY_STOP_THRESHOLD
 
 
 class Model(object):
@@ -8,9 +9,9 @@ class Model(object):
 
         if theta is None:
             if latent_dim is not None:
-                theta = np.random.random(latent_dim) * 0.1
+                theta = np.random.random(latent_dim) * INITIAL_THETA_SCALE
 
-        self.theta = np.array(theta).astype(float)
+        self.theta = np.array(theta, dtype=float)
         self._alpha = learning_rate
         self._lambda = lambda_weight
 
@@ -38,7 +39,7 @@ class Model(object):
         self._lambda = kwargs['lambda_weight']
 
         if kwargs['latent_dim'] is not None:
-            self.theta = np.random.random(kwargs['latent_dim'])
+            self.theta = np.random.random(kwargs['latent_dim']) * INITIAL_THETA_SCALE
         return self
 
     def fit(self, x, y, epochs=50, learning_rate=None, lambda_weight=None):
@@ -74,10 +75,15 @@ class Model(object):
 
     def backward(self, h):
         loss = self.__compute_loss(h)
-        # if loss > 100:
-        #     self.theta = np.random.random(self.theta.shape) * 0.1
-        # else:
-        self.__gradient_descent(h)
+        if loss > 100:
+            # loss explosion
+            # simply re-random theta
+            self.theta = np.random.random(self.theta.shape) * INITIAL_THETA_SCALE
+        elif loss < OFFLINE_EARLY_STOP_THRESHOLD:
+            # stop tuning this theta
+            pass
+        else:
+            self.__gradient_descent(h)
 
     def __gradient_descent(self, h):
         assert h.shape == self.y.shape

@@ -4,7 +4,7 @@ from mongoengine import *
 connect('rs')
 
 
-class RatingDocument(Document):
+class Ratings(Document):
     user_key = StringField()
     item_key = StringField()
     value = FloatField()
@@ -14,7 +14,7 @@ class RatingDocument(Document):
     }
 
 
-class FeaturesDocument(Document):
+class Features(Document):
     type = StringField()
     key = StringField()
     values = ListField()
@@ -24,13 +24,24 @@ class FeaturesDocument(Document):
     }
 
 
+class Predictions(Document):
+    user_key = StringField()
+    item_key = StringField()
+    value = FloatField()
+
+
+class UserTopKItems(Document):
+    user = StringField()
+    items = ListField()
+
+
 def load_features(key):
-    result = FeaturesDocument.objects(key=key).first()
+    result = Features.objects(key=key).first()
     if result is not None:
         return result.values
     else:
         return None
 
 
-def save_features(key, values):
-    FeaturesDocument.objects(key=key).update_one(values=values, upsert=True)
+def save_features(key, ftype, values):
+    Features.objects(key=key, type=ftype).update_one(values=values, upsert=True)
