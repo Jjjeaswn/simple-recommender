@@ -1,9 +1,9 @@
 # Created by wangzixin at 31/07/2018
 from model.tools.transformer import to_training_data
-from model.data_centre.data_pool import DataPool, add_rating
+from model.data.data_pool import DataPool, add_rating
 from model.training.model import Model
 import numpy as np
-from model.data_centre.mongo import *
+from model.data.mongo import *
 
 
 def main():
