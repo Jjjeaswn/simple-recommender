@@ -2,12 +2,14 @@
 import numpy as np
 
 
-def to_training_data(samples: list):
+def to_training_data(samples):
     """
 
-    :param samples: list of Pair
-    :return:
-        x, y
+    Args:
+        samples (list of Pair):
+
+    Returns:
+
     """
 
     assert len(samples) > 0
@@ -22,11 +24,12 @@ def features2matrix(feature_list):
     """
 
     Args:
-        :param feature_list: list of Feature
+        feature_list (list of Feature):
 
     Returns:
-
+        (np.ndarray,  list of str): matrix and list of key of features
     """
+
     matrix = np.array([feature.values for feature in feature_list], dtype=float)
     key_lst = [feature.key for feature in feature_list]
 

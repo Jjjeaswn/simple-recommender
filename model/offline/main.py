@@ -26,7 +26,8 @@ def training():
 
     # train
     try:
-        for _ in range(OFFLINE_TRAINING_EPOCHS):
+        for epoch in range(OFFLINE_TRAINING_EPOCHS):
+            losses = []
             for feature in DataPool.pool:
                 sampled = DataPool.sample(feature)
                 x, y = to_training_data(sampled)
@@ -35,8 +36,12 @@ def training():
 
                 model = Model(theta=feature.values)
                 model.fit(x, y, epochs=OFFLINE_SAMPLE_TRAINING_EPOCHS)
+
                 feature.values = model.theta
-                print('loss {} {}'.format(feature.key, model.losses[-1]))
+                losses.append(model.losses[-1])
+                # print('loss {} {}'.format(feature.key, model.losses[-1]))
+
+            print('Epoch-{} mean loss = {}'.format(epoch + 1, sum(losses) / len(DataPool.pool)))
     except KeyboardInterrupt:
         print('Interrupted by User ...')
 
@@ -51,7 +56,6 @@ def training():
 
 def generate_top_k(k=100):
     items = Features.objects(type='item')[:1000]
-
 
     items_matrix, item_keys = features2matrix(items)
 

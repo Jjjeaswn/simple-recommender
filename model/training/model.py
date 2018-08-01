@@ -5,11 +5,32 @@ from model.consts import INITIAL_THETA_SCALE, OFFLINE_EARLY_STOP_THRESHOLD
 
 
 class Model(object):
-    def __init__(self, theta=None, latent_dim=1, learning_rate=.05, lambda_weight=.0001, losses_log=True):
+    def __init__(self,
+                 theta=None,
+                 latent_dim=1,
+                 learning_rate=.05,
+                 lambda_weight=.0001,
+                 losses_log=True,
+                 initial_theta_scale=INITIAL_THETA_SCALE,
+                 early_stop_threshold=OFFLINE_EARLY_STOP_THRESHOLD):
+        """
+
+        Args:
+            theta (float):
+            latent_dim (int):
+            learning_rate (float):
+            lambda_weight (float):
+            losses_log (bool):
+            initial_theta_scale(float):
+            early_stop_threshold(float):
+        """
+
+        self.initial_theta_scale = initial_theta_scale
+        self.early_stop_threshold = early_stop_threshold
 
         if theta is None:
             if latent_dim is not None:
-                theta = np.random.random(latent_dim) * INITIAL_THETA_SCALE
+                theta = np.random.random(latent_dim) * self.initial_theta_scale
 
         self.theta = np.array(theta, dtype=float)
         self._alpha = learning_rate
@@ -21,7 +42,7 @@ class Model(object):
         self.y = None
 
         self.losses_log = losses_log
-        self.losses = []
+        self.losses = []  # type: list[float]
 
     def score(self, *args, **kwargs):
         score = 1 / np.sum(np.power(self.predict(self.x) - self.y, 2))
@@ -39,17 +60,21 @@ class Model(object):
         self._lambda = kwargs['lambda_weight']
 
         if kwargs['latent_dim'] is not None:
-            self.theta = np.random.random(kwargs['latent_dim']) * INITIAL_THETA_SCALE
+            self.theta = np.random.random(kwargs['latent_dim']) * self.initial_theta_scale
         return self
 
     def fit(self, x, y, epochs=50, learning_rate=None, lambda_weight=None):
         """
 
         Args:
-            y: user's item ratings
-            epochs: total times we train the model
-            lambda_weight:
+            x(np.ndarray | list of list of float):
+            y(np.ndarray | list):
+            epochs:
             learning_rate:
+            lambda_weight:
+
+        Returns:
+
         """
 
         if learning_rate is not None:
@@ -79,7 +104,7 @@ class Model(object):
             # loss explosion
             # simply re-random theta
             self.theta = np.random.random(self.theta.shape) * INITIAL_THETA_SCALE
-        elif loss < OFFLINE_EARLY_STOP_THRESHOLD:
+        elif loss < self.early_stop_threshold:
             # stop tuning this theta
             pass
         else:

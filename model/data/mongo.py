@@ -35,13 +35,19 @@ class UserTopKItems(Document):
     items = ListField()
 
 
-def load_features(key):
-    result = Features.objects(key=key).first()
+def load_features(key, ftype=None):
+    if ftype is None:
+        result = Features.objects(key=key).first()
+    else:
+        result = Features.objects(key=key, type=ftype).first()
     if result is not None:
         return result.values
     else:
         return None
 
 
-def save_features(key, ftype, values):
-    Features.objects(key=key, type=ftype).update_one(values=values, upsert=True)
+def save_features(key, ftype=None, values=None):
+    if ftype is None:
+        Features.objects(key=key).update_one(values=values, upsert=True)
+    else:
+        Features.objects(key=key, type=ftype).update_one(values=values, upsert=True)

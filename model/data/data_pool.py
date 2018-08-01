@@ -15,25 +15,43 @@ class DataPool(object):
 
     @staticmethod
     def _store_obj_key(key):
-        """ mapping str(key) to key obj
+        """
 
         Args:
+            key (str | Feature):
 
+        Returns:
+
+        Raises:
+            ValueError
+        """
+
+        if isinstance(key, str) and key not in DataPool.key_pool:
+            raise ValueError('key {}\'s obj can not be found in key pool, call `DataPool.add_key(obj)` before this')
+        else:
+            str_key = str(key)
+            if str_key not in DataPool.key_pool:
+                DataPool.key_pool[str_key] = key
+
+    @staticmethod
+    def add_key(key):
+        """
+
+        Args:
+            key (Feature):
 
         Returns:
 
         """
-        if not isinstance(key, str):
-            str_key = str(key)
-            if str_key not in DataPool.key_pool:
-                DataPool.key_pool[str_key] = key
+        DataPool._store_obj_key(key)
 
     @staticmethod
     def add(key, values=None):
         """
 
         Args:
-            key, values
+            key (str | Feature):
+            values(list of Pair):
 
         Returns:
 
@@ -50,7 +68,8 @@ class DataPool(object):
         """
 
         Args:
-
+            key (str | Feature):
+            values(list of Pair):
 
         Returns:
 
@@ -66,7 +85,8 @@ class DataPool(object):
         """
 
         Args:
-            key, value
+            key (str | Feature):
+            value (Pair):
 
         Returns:
 
@@ -81,11 +101,13 @@ class DataPool(object):
         """
 
         Args:
-            key, size
+            key (str | Feature):
+            size (int):
 
         Returns:
-           :rtype: list of Bundle
+            list of Feature:
         """
+
         if key is str and key in DataPool.key_pool:
             key = DataPool.key_pool[key]
 
@@ -102,11 +124,13 @@ class DataPool(object):
         """
 
         Args:
-            key
+            key (str | Feature):
 
         Returns:
+            list of Pair: Paris associated with the key
 
         """
+
         if isinstance(key, str):
             key = DataPool.key_pool[key]
 
@@ -114,14 +138,6 @@ class DataPool(object):
 
     @staticmethod
     def clear():
-        """
-
-        Args:
-
-
-        Returns:
-
-        """
 
         DataPool.pool.clear()
         DataPool.key_pool.clear()
@@ -158,16 +174,23 @@ class Pair(object):
         self.feature = feature
         self.target = target
 
+    def __str__(self) -> str:
+        return str(self.feature)
+
 
 def add_rating(uk, ik, rating, load_feature_func=None):
     """
 
-    :param uk: user key
-    :param ik: item key
-    :param float rating : rating
-    :param load_feature_func:
-    :return:
+    Args:
+        uk (str):
+        ik (str):
+        rating (float):
+        load_feature_func (func):
+
+    Returns:
+        None
     """
+
     if uk not in DataPool.key_pool:
         user = Feature(uk, 'user', load_feature_func(uk))
     else:
