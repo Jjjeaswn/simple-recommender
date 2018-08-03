@@ -1,18 +1,16 @@
 import numpy as np
 import matplotlib.pyplot as plt
-from sklearn.model_selection import GridSearchCV
-from model.consts import INITIAL_THETA_SCALE, OFFLINE_EARLY_STOP_THRESHOLD
 
 
-class Model(object):
+class CFModel(object):
     def __init__(self,
                  theta=None,
                  latent_dim=1,
                  learning_rate=.05,
                  lambda_weight=.0001,
                  losses_log=True,
-                 initial_theta_scale=INITIAL_THETA_SCALE,
-                 early_stop_threshold=OFFLINE_EARLY_STOP_THRESHOLD):
+                 initial_theta_scale=.2,
+                 early_stop_threshold=.1):
         """
 
         Args:
@@ -103,7 +101,7 @@ class Model(object):
         if loss > 100:
             # loss explosion
             # simply re-random theta
-            self.theta = np.random.random(self.theta.shape) * INITIAL_THETA_SCALE
+            self.theta = np.random.random(self.theta.shape) * self.initial_theta_scale
         elif loss < self.early_stop_threshold:
             # stop tuning this theta
             pass
@@ -139,35 +137,3 @@ class Model(object):
         print('alpha = {}, lambda = {}'.format(self._alpha, self._lambda))
         plt.text(2, 2, 'alpha = {}, lambda = {}'.format(self._alpha, self._lambda))
         plt.show()
-
-
-if __name__ == '__main__':
-    model = Model(latent_dim=4)
-    # x = np.random.random((10, 10))
-    x = np.array([
-        [1, .9, 0, 0],
-        [1, 0, .9, 0],
-        [1, 0, 0, .9]
-    ])
-    # x[0] = 1.
-    # y = np.random.randint(1, 6, 6).astype(float)
-    y = np.array([
-        5.,
-        1.,
-        3.
-    ])
-
-    clf = GridSearchCV(model, {
-        'learning_rate': [.01, .05, .001, .005],
-        'lambda_weight': [.1, .01, .001, .0001],
-        'latent_dim': [4]
-    })
-
-    clf.fit(x, y)
-    print('best score = ', clf.best_score_)
-
-    print(clf.best_estimator_.predict(x))
-    print(y)
-    print(clf.best_estimator_.theta)
-
-    clf.best_estimator_.plot_losses()
