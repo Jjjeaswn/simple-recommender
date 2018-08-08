@@ -9,7 +9,7 @@ from rs.framework.pipline import Pipeline
 
 CPU_COUNT = multiprocessing.cpu_count()
 
-# deprecated_model
+# model super parameters
 LATENT_DIM = 10
 LEARNING_RATE = .1
 WEIGHTS_REGULAR = .001
@@ -50,16 +50,22 @@ class RsPipeline(Pipeline):
         ratings = Ratings.objects
         cnt = 0
         for rating in ratings:
-            if cnt > 10:
+            if cnt > 1000:
                 break
-            print('Loading ... ', cnt)
+            self.log_info('Loading ... ', cnt)
             cnt += 1
             user = rating.user_key
             item = rating.item_key
             r = rating.value
 
-            user_weights = load_features(user, ftype='user') or random_weights(LATENT_DIM, scale=INITIAL_THETA_SCALE)
-            item_weights = load_features(item, ftype='item') or random_weights(LATENT_DIM, scale=INITIAL_THETA_SCALE)
+            user_weights = load_features(user, ftype='user')
+            item_weights = load_features(item, ftype='item')
+
+            if user_weights is None or len(user_weights) < LATENT_DIM:
+                user_weights = random_weights(LATENT_DIM, scale=INITIAL_THETA_SCALE)
+
+            if item_weights is None or len(item_weights) < LATENT_DIM:
+                item_weights = random_weights(LATENT_DIM, scale=INITIAL_THETA_SCALE)
 
             self.pool.collect(Drop(user, weights=user_weights, ftype='user'),
                               Drop(item, weights=item_weights, ftype='item'),
@@ -81,6 +87,7 @@ class RsPipeline(Pipeline):
 
     def on_training(self, drops):
         for epoch in range(OFFLINE_TRAINING_EPOCHS):
+            losses = []
             for drop in drops:
                 adj_drops, adj_attrs = self.pool.sample_adjacent_drops(drop, k=32)
                 x = np.array([adj_drop.weights for adj_drop in adj_drops])
@@ -90,8 +97,9 @@ class RsPipeline(Pipeline):
                                    initial_theta_scale=INITIAL_THETA_SCALE)
                 cf_model.fit(x, y, epochs=OFFLINE_SAMPLE_TRAINING_EPOCHS)
                 drop.weights = cf_model.theta
+                losses.append(cf_model.losses[-1])
 
-            # time.sleep(1)
+            self.log_info('Mean loss = {}'.format(sum(losses) / len(losses)), color='blue')
 
     def on_training_end(self):
         for drop in self.pool.drops:
@@ -107,14 +115,14 @@ class RsPipeline(Pipeline):
         k = 100
         for user in users:
             cf_model = CFModel(theta=user.values)
-            preds = cf_model.predict(x)
-            itempreds = sorted(zip(key_index, preds), key=lambda x: x[1], reverse=True)
+            predictions = cf_model.predict(x)
+            item_preds = sorted(zip(key_index, predictions), key=lambda x: x[1], reverse=True)
             adj_drops, _ = self.pool.get_adjacent_drops(user.key)
             associated_set = set([drop.name for drop in adj_drops])
             limit = k + len(adj_drops)
-            user_top_limit_item_set = set([item_pred[0] for item_pred in itempreds[:limit]])
+            user_top_limit_item_set = set([item_pred[0] for item_pred in item_preds[:limit]])
             user_top_k_item_set = (user_top_limit_item_set - associated_set)
-            user_top_k_items = filter(lambda kv: kv[0] in user_top_k_item_set, itempreds[:limit])
+            user_top_k_items = filter(lambda kv: kv[0] in user_top_k_item_set, item_preds[:limit])
 
             # update database
             UserTopKItems.objects(user=user.key).update(items=[k for k, v in user_top_k_items], upsert=True)
