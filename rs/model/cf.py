@@ -11,6 +11,7 @@ class CFModel(object):
                  losses_log=True,
                  initial_theta_scale=.2,
                  early_stop_threshold=.1):
+
         """
 
         Args:
@@ -85,7 +86,7 @@ class CFModel(object):
         self.x = np.array(x, dtype=float)
         self.y = np.array(y, dtype=float)
 
-        self.x[:, 0] = 1.
+        self.x[:, 0] = 1.  # bias
 
         for epoch in range(self.epochs):
             h = self.predict(self.x)

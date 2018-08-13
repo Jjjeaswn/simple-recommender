@@ -5,7 +5,7 @@ from datetime import datetime
 from abc import abstractmethod, ABC
 import multiprocessing
 
-NB_CPU = multiprocessing.cpu_count()
+NB_CPU: int = multiprocessing.cpu_count()
 
 
 class Colors:
